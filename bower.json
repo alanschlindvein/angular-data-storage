@@ -1,0 +1,30 @@
+{
+    "name": "angular-data-storage",
+    "version": "0.1.0",
+    "homepage": "https://github.com/alanschlindvein/angular-data-storage",
+    "authors": [
+        "alanschlindvein <alansaraujo.schlindvein@gmail.com>"
+    ],
+    "description": "An Angular module to store data",
+    "main": "./dist/angular-data-storage.js",
+    "keywords": [
+        "AngularJS",
+        "Angular",
+        "Messenger"
+    ],
+    "license": "MIT",
+    "ignore": [
+        "src",
+        "node_modules",
+        "bower_components",
+        "test",
+        "tests",
+        "Gruntfile.js"
+    ],
+    "dependencies": {
+        "angular": "^1.x"
+    },
+    "devDependencies": {
+        "angular-mocks": "^1.x"
+    }
+}
