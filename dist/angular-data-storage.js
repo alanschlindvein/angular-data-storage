@@ -1,3 +1,11 @@
+/**
+ * An Angular module to storage data
+ * @version v0.1.0 - 2016-04-29
+ * @link https://github.com/alanschlindvein/angular-data-storage
+ * @author alanschlindvein <alansaraujo.schlindvein@gmail.com>
+ * @license MIT License, http://www.opensource.org/licenses/MIT
+ */
+(function (window, angular) {
 angular
     .module('AngularDataStorage', [])
     .service('angularDataStorageService', ['$rootScope', function($rootScope) {
@@ -53,3 +61,4 @@ angular
 			}
 		};
     }]);
+})(window, window.angular);

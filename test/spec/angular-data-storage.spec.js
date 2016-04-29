@@ -1,73 +1,157 @@
 'use strict';
 
 describe('Angular Data Storage', function () {
-    var scope1, scope2;
+    var firstCrlScope, secondCrlScope, rootScope, fooForSpy;
 
-    function ctrl1($rootScope) {
-        scope1 = $rootScope.$new();
+    function firstCtrl() {
+	    firstCrlScope = rootScope.$new();
     }
 
-    function ctrl2($rootScope) {
-        scope2 = $rootScope.$new();
+    function secondCtrl() {
+	    secondCrlScope = rootScope.$new();
     }
 
     beforeEach(module('AngularDataStorage'));
-    beforeEach(inject(function ($rootScope) {
-        ctrl1($rootScope);
-        ctrl2($rootScope);
+    beforeEach(inject(function($injector) {
+	    rootScope = $injector.get('$rootScope');
+
+	    firstCtrl();
+	    secondCtrl();
+
+	    fooForSpy = {
+		    print: function() {
+			    console.log('print');
+		    },
+		    save: function() {
+			    console.log('save');
+		    },
+		    update: function() {
+			    console.log('update');
+		    }
+	    };
+	    spyOn(fooForSpy, 'print').and.callThrough();
+	    spyOn(fooForSpy, 'save').and.callThrough();
+	    spyOn(fooForSpy, 'update').and.callThrough();
+
+	    spyOn(rootScope, '$broadcast');
     }));
 
-    it('should return the value1 for object1', inject(function (angularDataStorageService) {
-        angularDataStorageService.save('object1', 'value1');
-
-        var obj1 = angularDataStorageService.get('object1');
-        expect(obj1).not.toBeNull();
-        expect(obj1).toBe('value1');
+    it('should save and get value', inject(function(angularDataStorageService) {
+	    try {
+	        angularDataStorageService.save('foo', 0);
+        } catch(e) {
+	        expect(e).toBeNull();
+        }
+	    var foo;
+	    try {
+		    foo = angularDataStorageService.get('foo');
+	    } catch(e) {
+		    expect(e).toBeNull();
+	    }
+        expect(foo).not.toBeNull();
+        expect(foo).toBe(0);
     }));
 
-    it('should return the value1 for object1 destroying from storage', inject(function (angularDataStorageService) {
-        angularDataStorageService.save('object1', 'value1');
-
-        var obj1 = angularDataStorageService.get('object1', {'destroy': true})
-        expect(obj1).not.toBeNull();
-        expect(obj1).toBe('value1');
-        var obj2 = angularDataStorageService.get('object1');
-        expect(obj2).toBeNull();
+	it('should return the value and destroy the register', inject(function(angularDataStorageService) {
+        try {
+	        angularDataStorageService.save('foo', 'foo');
+        } catch(e) {
+	        expect(e).toBeNull();
+        }
+        var foo, dFoo;
+		try {
+			foo = angularDataStorageService.get('foo', {destroy: true});
+			dFoo = angularDataStorageService.get('foo');
+		} catch(e) {
+			expect(e).toBeNull();
+		}
+        expect(foo).toBe('foo');
+        expect(dFoo).toBeNull();
     }));
 
-    it('should scope1 set value for the provider', inject(function (angularDataStorageService) {
-        scope1.value = 'banana';
-        expect(scope1.value).toBe('banana');
+	it('should delete key', inject(function(angularDataStorageService) {
+		try {
+			angularDataStorageService.save('foo', 'foo');
+		} catch(e) {
+			expect(e).toBeNull();
+		}
+		try {
+			angularDataStorageService.delete('foo');
+		} catch(e) {
+			expect(e).toBeNull();
+		}
+		expect(angularDataStorageService.get('foo')).toBeNull();
+	}));
 
-        angularDataStorageService.save('bnn', scope1.value);
-        var value = angularDataStorageService.get('bnn');
-        expect(value).toBe('banana');
-    }));
+	it('should clear all keys', inject(function(angularDataStorageService) {
+		try {
+			angularDataStorageService.save('foo', 'foo');
+			angularDataStorageService.save('bar', 'bar');
+		} catch(e) {
+			expect(e).toBeNull();
+		}
+		angularDataStorageService.clearAll();
+		expect(angularDataStorageService.get('foo')).toBeNull();
+		expect(angularDataStorageService.get('bar')).toBeNull();
+	}));
 
-    it('should scope1 set value for the provider and scope2 retrieve and set on itself ', inject(function (angularDataStorageService) {
-        scope1.value = 'banana';
-        expect(scope1.value).toBe('banana');
-        expect(scope2.value).toBeUndefined();
+	it('should get all keys', inject(function(angularDataStorageService) {
+		try {
+			angularDataStorageService.save('foo', 'foo');
+			angularDataStorageService.save('bar', 'bar');
+			angularDataStorageService.save('bee', 'bee');
+		} catch(e) {
+			expect(e).toBeNull();
+		}
+		expect(angularDataStorageService.getAllKeys()).toEqual(['foo', 'bar', 'bee']);
+	}));
 
-        angularDataStorageService.save('bnn', scope1.value);
-        scope2.value = angularDataStorageService.get('bnn');
-        expect(scope1.value).toBe('banana');
-        expect(scope2.value).toBe('banana');
-    }));
+	it('should notify when saved', inject(function(angularDataStorageService) {
+		try {
+			angularDataStorageService.save('foo', 'foo', {notify: true});
+		} catch(e) {
+			expect(e).toBeNull();
+		}
+		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.saved', 'foo');
+	}));
 
-    it('should not data interfere with origin objects with default options', inject(function (angularDataStorageService) {
-        scope1.value = 'banana';
-        expect(scope1.value).toBe('banana');
+	it('should notify when used with get function', inject(function(angularDataStorageService) {
+		try {
+			angularDataStorageService.save('foo', 'foo');
+		} catch(e) {
+			expect(e).toBeNull();
+		}
+		expect(angularDataStorageService.get('foo', {notify: true})).toBe('foo');
+		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.used', 'foo');
+	}));
 
-        angularDataStorageService.save('bnn', scope1.value);
-        scope2.value = angularDataStorageService.get('bnn');
-        expect(scope1.value).toBe('banana');
-        expect(scope2.value).toBe('banana');
+	it('should notify when destroyed with get function', inject(function(angularDataStorageService) {
+		try {
+			angularDataStorageService.save('foo', 'foo');
+		} catch(e) {
+			expect(e).toBeNull();
+		}
+		expect(angularDataStorageService.get('foo', {destroy: true, notify: true})).toBe('foo');
+		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.destroyed');
+	}));
 
-        scope1.value = 'apple';
-        expect(scope1.value).toBe('apple');
-        expect(scope2.value).toBe('banana');
-    }));
+	it('should notify when destroyed and used with get function', inject(function(angularDataStorageService) {
+		try {
+			angularDataStorageService.save('foo', 'foo');
+		} catch(e) {
+			expect(e).toBeNull();
+		}
+		expect(angularDataStorageService.get('foo', {destroy: true, notify: true})).toBe('foo');
+		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.destroyed');
+		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.used', 'foo');
+	}));
 
-
+	it('should notify when destroyed', inject(function(angularDataStorageService) {
+		try {
+			angularDataStorageService.delete('foo', {notify: true});
+		} catch(e) {
+			expect(e).toBeNull();
+		}
+		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.destroyed');
+	}));
 });
