@@ -1,157 +1,76 @@
 'use strict';
 
-describe('Angular Data Storage', function () {
-    var firstCrlScope, secondCrlScope, rootScope, fooForSpy;
+describe('Angular Data Storage', function() {
+   var funcToSpy;
 
-    function firstCtrl() {
-	    firstCrlScope = rootScope.$new();
-    }
+   beforeEach(module('AngularDataStorage'));
+   beforeEach(inject(function() {
 
-    function secondCtrl() {
-	    secondCrlScope = rootScope.$new();
-    }
+      funcToSpy = {
+         update: function() {
+            console.log('update');
+         }
+      };
+      spyOn(funcToSpy, 'update').and.callThrough();
+   }));
 
-    beforeEach(module('AngularDataStorage'));
-    beforeEach(inject(function($injector) {
-	    rootScope = $injector.get('$rootScope');
+   it('should save and fetch value', inject(function(dataStorageService) {
+      dataStorageService.save('foo', 'foo');
 
-	    firstCtrl();
-	    secondCtrl();
+      var foo = dataStorageService.fetch('foo');
+      expect(foo).not.toBeNull();
+      expect(foo).toBe('foo');
+   }));
 
-	    fooForSpy = {
-		    print: function() {
-			    console.log('print');
-		    },
-		    save: function() {
-			    console.log('save');
-		    },
-		    update: function() {
-			    console.log('update');
-		    }
-	    };
-	    spyOn(fooForSpy, 'print').and.callThrough();
-	    spyOn(fooForSpy, 'save').and.callThrough();
-	    spyOn(fooForSpy, 'update').and.callThrough();
+   it('should delete key', inject(function(dataStorageService) {
+      dataStorageService.save('foo', 'foo');
 
-	    spyOn(rootScope, '$broadcast');
-    }));
+      dataStorageService.delete('foo');
 
-    it('should save and get value', inject(function(angularDataStorageService) {
-	    try {
-	        angularDataStorageService.save('foo', 0);
-        } catch(e) {
-	        expect(e).toBeNull();
-        }
-	    var foo;
-	    try {
-		    foo = angularDataStorageService.get('foo');
-	    } catch(e) {
-		    expect(e).toBeNull();
-	    }
-        expect(foo).not.toBeNull();
-        expect(foo).toBe(0);
-    }));
+      expect(dataStorageService.length()).toBe(0);
+   }));
 
-	it('should return the value and destroy the register', inject(function(angularDataStorageService) {
-        try {
-	        angularDataStorageService.save('foo', 'foo');
-        } catch(e) {
-	        expect(e).toBeNull();
-        }
-        var foo, dFoo;
-		try {
-			foo = angularDataStorageService.get('foo', {destroy: true});
-			dFoo = angularDataStorageService.get('foo');
-		} catch(e) {
-			expect(e).toBeNull();
-		}
-        expect(foo).toBe('foo');
-        expect(dFoo).toBeNull();
-    }));
+   it('should delete many keys', inject(function(dataStorageService) {
+      dataStorageService.save('foo', 'foo');
+      dataStorageService.save('bar', 'bar');
+      dataStorageService.save('tot', 'tot');
 
-	it('should delete key', inject(function(angularDataStorageService) {
-		try {
-			angularDataStorageService.save('foo', 'foo');
-		} catch(e) {
-			expect(e).toBeNull();
-		}
-		try {
-			angularDataStorageService.delete('foo');
-		} catch(e) {
-			expect(e).toBeNull();
-		}
-		expect(angularDataStorageService.get('foo')).toBeNull();
-	}));
+      dataStorageService.delete('foo', 'bar', 'tot');
 
-	it('should clear all keys', inject(function(angularDataStorageService) {
-		try {
-			angularDataStorageService.save('foo', 'foo');
-			angularDataStorageService.save('bar', 'bar');
-		} catch(e) {
-			expect(e).toBeNull();
-		}
-		angularDataStorageService.clearAll();
-		expect(angularDataStorageService.get('foo')).toBeNull();
-		expect(angularDataStorageService.get('bar')).toBeNull();
-	}));
+      expect(dataStorageService.length()).toBe(0);
+   }));
 
-	it('should get all keys', inject(function(angularDataStorageService) {
-		try {
-			angularDataStorageService.save('foo', 'foo');
-			angularDataStorageService.save('bar', 'bar');
-			angularDataStorageService.save('bee', 'bee');
-		} catch(e) {
-			expect(e).toBeNull();
-		}
-		expect(angularDataStorageService.getAllKeys()).toEqual(['foo', 'bar', 'bee']);
-	}));
+   it('should save and fetch functions', inject(function(dataStorageService) {
+      dataStorageService.save('update', funcToSpy.update);
 
-	it('should notify when saved', inject(function(angularDataStorageService) {
-		try {
-			angularDataStorageService.save('foo', 'foo', {notify: true});
-		} catch(e) {
-			expect(e).toBeNull();
-		}
-		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.saved', 'foo');
-	}));
+      dataStorageService.fetch('update')();
 
-	it('should notify when used with get function', inject(function(angularDataStorageService) {
-		try {
-			angularDataStorageService.save('foo', 'foo');
-		} catch(e) {
-			expect(e).toBeNull();
-		}
-		expect(angularDataStorageService.get('foo', {notify: true})).toBe('foo');
-		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.used', 'foo');
-	}));
+      expect(funcToSpy.update).toHaveBeenCalled();
+   }));
 
-	it('should notify when destroyed with get function', inject(function(angularDataStorageService) {
-		try {
-			angularDataStorageService.save('foo', 'foo');
-		} catch(e) {
-			expect(e).toBeNull();
-		}
-		expect(angularDataStorageService.get('foo', {destroy: true, notify: true})).toBe('foo');
-		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.destroyed');
-	}));
+   it('should clear all keys', inject(function(dataStorageService) {
+      dataStorageService.save('foo', 'foo');
+      dataStorageService.save('bar', 'bar');
 
-	it('should notify when destroyed and used with get function', inject(function(angularDataStorageService) {
-		try {
-			angularDataStorageService.save('foo', 'foo');
-		} catch(e) {
-			expect(e).toBeNull();
-		}
-		expect(angularDataStorageService.get('foo', {destroy: true, notify: true})).toBe('foo');
-		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.destroyed');
-		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.used', 'foo');
-	}));
+      dataStorageService.clearAll();
 
-	it('should notify when destroyed', inject(function(angularDataStorageService) {
-		try {
-			angularDataStorageService.delete('foo', {notify: true});
-		} catch(e) {
-			expect(e).toBeNull();
-		}
-		expect(rootScope.$broadcast).toHaveBeenCalledWith('storage.foo.destroyed');
-	}));
+      expect(dataStorageService.fetch('foo')).toBeNull();
+      expect(dataStorageService.fetch('bar')).toBeNull();
+   }));
+
+   it('should fetch all keys', inject(function(dataStorageService) {
+      dataStorageService.save('foo', 'foo');
+      dataStorageService.save('bar', 'bar');
+      dataStorageService.save('bee', 'bee');
+
+      expect(dataStorageService.allKeys()).toEqual(['foo', 'bar', 'bee']);
+   }));
+
+   it('should return dataStorage length', inject(function(dataStorageService) {
+      dataStorageService.save('foo', 'foo');
+      dataStorageService.save('bar', 'bar');
+      dataStorageService.save('bee', 'bee');
+
+      expect(dataStorageService.length()).toBe(3);
+   }));
 });

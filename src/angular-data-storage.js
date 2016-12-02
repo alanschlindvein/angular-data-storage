@@ -1,55 +1,53 @@
 angular
-    .module('AngularDataStorage', [])
-    .service('angularDataStorageService', ['$rootScope', function($rootScope) {
-		var saver = {};
+   .module('AngularDataStorage', [])
+   .service('dataStorageService', dataStorageService);
 
-		var isInvalidKey = function(key) {
-			return (angular.isUndefined(key) || typeof key !== 'string');
-		};
+   function dataStorageService() {
+      var self = this,
+         saver = {},
+         keyError = 'Key needs to be string.',
+         argumentsError = 'You need pass at least one key';
 
-		this.get = function(key, options) {
-			if(angular.isUndefined(key)){
-				throw 'Failed to execute \'get\'.';
-			}
-			var value = angular.copy(saver[key]);
-			if(options) {
-				if(angular.isDefined(options.destroy) && options.destroy) {
-					delete saver[key];
-					(options.notify) && $rootScope.$broadcast('storage.' + key + '.destroyed');
-				}
-				(options.notify) && $rootScope.$broadcast('storage.' + key + '.used', angular.isUndefined(value) ? null : value);
-			}
-			return angular.isUndefined(value) ? null : value;
-		};
+      function isInvalidKey(key) {
+         return typeof key !== 'string';
+      }
 
-		this.save = function(key, value, options) {
-			if(isInvalidKey(key) || angular.isUndefined(value)) {
-				throw 'Failed to execute \'save\'.';
-			}
-			saver[key] = angular.copy(value);
-			if(options) {
-				(options.notify) && $rootScope.$broadcast('storage.' + key + '.saved', angular.isUndefined(value) ? null : value);
-			}
-		};
+      this.fetch = function(key) {
+         if(isInvalidKey(key)) {
+            throw keyError;
+         }
+         var value = saver[key];
+         return (typeof value !== 'undefined') ? value : null;
+      };
 
-		this.delete = function(key, options) {
-			if(isInvalidKey(key)) {
-				throw 'Failed to execute \'delete\'.';
-			}
-			delete saver[key];
-			if(options) {
-				(options.notify) && $rootScope.$broadcast('storage.' + key + '.destroyed');
-			}
-		};
+      this.save = function(key, value) {
+         if(isInvalidKey(key)) {
+            throw keyError;
+         }
+         saver[key] = value;
+      };
 
-		this.getAllKeys = function() {
-			return Object.keys(saver);
-		};
+      this.delete = function() {
+         if(!arguments.length) {
+            throw argumentsError;
+         }
+         for(var i = 0; i < arguments.length; i++) {
+            if(isInvalidKey(arguments[i])) {
+               throw keyError;
+            }
+            delete saver[arguments[i]];
+         }
+      };
 
-		this.clearAll = function(options) {
-			saver = {};
-			if(options) {
-				(options.notify) && $rootScope.$broadcast('storage.empty');
-			}
-		};
-    }]);
+      this.allKeys = function() {
+         return Object.keys(saver);
+      };
+
+      this.clearAll = function() {
+         saver = {};
+      };
+
+      this.length = function() {
+         return self.allKeys().length;
+      }
+   }
