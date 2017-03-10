@@ -1,11 +1,12 @@
 {
     "name": "angular-data-storage",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "An Angular module to storage data",
     "homepage": "https://github.com/alanschlindvein/angular-data-storage",
     "main": "./index.js",
     "scripts": {
-        "test": "grunt test"
+        "test": "grunt test",
+        "postinstall": "bower install"
     },
     "repository": {
         "type": "git",
